@@ -66,7 +66,7 @@ module uart
         .rx_dout(rx_dout)
     );
     
-    fifo rx_FIFO (
+    fifo #(.DEPTH(4'b1000),.DBIT(DBIT)) rx_FIFO (
         .clk(clk),          // input wire clk
         .srst(~reset_n),    // input wire srst
         .din(rx_dout),      // input wire [7 : 0] din
@@ -90,7 +90,7 @@ module uart
         .tx(tx)
     );
     
-    fifo (
+    fifo #(.DEPTH(4'b1000),.DBIT(DBIT)) tx_FIFO (
         .clk(clk),          // input wire clk
         .srst(~reset_n),    // input wire srst
         .din(w_data),      // input wire [7 : 0] din
