@@ -1,3 +1,115 @@
-UART- Universal asynchronous receiver transmitter- point-to-point asynchronous protocol widely used for device debugging and basic controller links.
-The transmitting UART is connected to a controlling data bus that sends data in a parallel form. From this, the data will now be transmitted on the transmission line (wire) serially, bit by bit, to the receiving UART. This, in turn, will convert the serial data into parallel for the receiving device.      
-The baud rate is the rate at which information is transferred to a communication channel. In the serial port context, the set baud rate will serve as the maximum number of bits per second to be transferred. The baud rate needs to be set the same on both the transmitting and receiving device.
+ UART Communication System with FIFO Buffers
+
+1. Overview
+
+UART (Universal Asynchronous Receiver Transmitter) is a widely used point-to-point asynchronous serial communication protocol used for device debugging, embedded systems, and communication between controllers and peripherals.
+In UART communication, data is generated in parallel form by the transmitting device. The UART transmitter converts this parallel data into a serial bit stream and sends it over a single communication line. At the receiving end, the UART receiver converts the serial data back into parallel form so that it can be processed by the receiving device.
+Since UART is an asynchronous protocol, both the transmitter and receiver must be configured to operate at the same baud rate.
+---
+
+2. Baud Rate
+
+The baud rate is the rate at which information is transmitted over a communication channel. In UART communication, the baud rate represents the number of bits transmitted per second.
+For this project, a baud rate of **9600 bps** is used.
+The receiver performs **16× oversampling** to accurately detect incoming data bits. Therefore, the baud rate generator produces a sampling tick at:
+Sampling Frequency = 16 × 9600 = 153600 Hz
+With a system clock of 100 MHz:
+Divider = 100,000,000 / 153,600 ≈ 651
+Thus, the baud rate generator generates a tick approximately every 651 clock cycles.
+---
+
+3. System Architecture
+
+The design consists of five major blocks:
+i. Baud Rate Generator
+The baud rate generator produces timing ticks required by both the UART transmitter and UART receiver.
+Functions:
+* Generates sampling ticks for UART communication.
+* Supports 16× oversampling at the receiver.
+* Provides synchronization timing for data transmission and reception.
+---
+
+ii. UART Receiver
+
+The UART receiver accepts serial data through the `rx` input line.
+Inputs:
+* Clock (`clk`)
+* Active-low reset (`reset_n`)
+* Baud rate tick
+* Serial input (`rx`)
+Functions:
+* Detects start bit.
+* Samples incoming data using 16× oversampling.
+* Samples each bit near its center for improved reliability.
+* Reconstructs the received serial data into an 8-bit parallel word.
+* Generates `rx_done_tick` when a complete byte has been received.
+---
+
+iii. Receiver FIFO
+A FIFO buffer is used on the receiver side to temporarily store received data.
+Inputs
+* Received data from UART receiver
+* `rx_done_tick` as write enable
+* `rd_uart` as read enable
+Functions:
+* Stores received bytes.
+* Allows the receiving system to read data independently of the UART reception rate.
+* Prevents data loss when the processor is temporarily busy.
+Output:
+* `r_data` (received parallel data)
+---
+
+iv. Transmitter FIFO
+A FIFO buffer is used on the transmitter side to store data before transmission.
+Inputs:
+* Data from the system bus
+* UART write signal (`wr_uart`)
+Functions:
+* Buffers outgoing data.
+* Decouples system write operations from UART transmission timing.
+* Supplies data to the UART transmitter when transmission is requested.
+---
+
+v. UART Transmitter
+The UART transmitter converts parallel data into a serial bit stream.
+Inputs:
+* Clock (`clk`)
+* Active-low reset (`reset_n`)
+* Baud rate tick
+* Data from transmitter FIFO
+Functions:
+* Generates UART frame consisting of:
+  * Start bit
+  * 8 data bits
+  * Stop bit
+* Serializes parallel data.
+* Transmits data through the `tx` output line.
+* Generates a transmission-complete signal after sending a full frame.
+---
+
+4. Data Flow
+
+ Transmission Path
+System Data → Transmitter FIFO → UART Transmitter → TX Line
+### Reception Path
+RX Line → UART Receiver → Receiver FIFO → System Data Output
+---
+
+5. Features
+
+* UART communication at 9600 baud.
+* 16× oversampling receiver.
+* Separate transmitter and receiver FIFOs.
+* Buffered data transmission and reception.
+* Fully synchronous RTL design.
+* Suitable for FPGA and ASIC implementation.
+---
+
+6. Applications
+
+* Embedded system communication
+* Microcontroller debugging
+* FPGA-to-FPGA communication
+* Processor peripheral interfaces
+* Serial terminal communication
+
