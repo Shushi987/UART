@@ -1,1 +1,3 @@
 UART- Universal asynchronous receiver transmitter- point-to-point asynchronous protocol widely used for device debugging and basic controller links.
+The transmitting UART is connected to a controlling data bus that sends data in a parallel form. From this, the data will now be transmitted on the transmission line (wire) serially, bit by bit, to the receiving UART. This, in turn, will convert the serial data into parallel for the receiving device.      
+The baud rate is the rate at which information is transferred to a communication channel. In the serial port context, the set baud rate will serve as the maximum number of bits per second to be transferred. The baud rate needs to be set the same on both the transmitting and receiving device.
